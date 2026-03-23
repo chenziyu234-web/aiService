@@ -1,0 +1,19 @@
+server:
+  port: 8080
+
+ai:
+  model:
+    api-key: sk-be9878a8096e411a92924244536c4df0
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    model-name: qwen-plus
+
+logistics:
+  mock-data: true
+
+furniture:
+  api:
+    mock: true
+  address-api:
+    url: ""
+  surcharge-api:
+    url: ""
