@@ -21,5 +21,5 @@ furniture:
   surcharge-api:
     url: ""
   tencent-lbs:
-    key: ${TENCENT_LBS_KEY:}
+    key: E76BZ-ZQP6W-GRNR3-RPLQP-QHE3O-VMFCM
     region: ""
