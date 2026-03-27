@@ -2,6 +2,7 @@ package com.logistics.backend.furniture.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.logistics.backend.furniture.model.AddressResolverType;
 import com.logistics.backend.furniture.model.AddressResult;
 import com.logistics.backend.furniture.model.SurchargeResult;
 import okhttp3.*;
@@ -12,10 +13,9 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 封装业务方提供的两个外部接口：
- * 接口1 - 超区位置点查询（地址 → 经纬度）
- * 接口2 - 超区费查询（经纬度 → 费用）
- * 当前使用 mock 实现，待业务方提供真实接口后切换。
+ * 封装超区查询的两个外部接口：
+ * 接口1 - 地址 → 经纬度（支持 MOCK / TENCENT_LBS / HTTP_JSON 三种解析源）
+ * 接口2 - 经纬度 → 超区费
  */
 @Service
 public class AddressService {
@@ -29,20 +29,41 @@ public class AddressService {
     @Value("${furniture.api.mock:true}")
     private boolean mockMode;
 
+    @Value("${furniture.address-resolver:MOCK}")
+    private String addressResolverRaw;
+
+    private final TencentGeocodeClient tencentGeocodeClient;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final OkHttpClient client = new OkHttpClient.Builder()
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
             .build();
 
+    public AddressService(TencentGeocodeClient tencentGeocodeClient) {
+        this.tencentGeocodeClient = tencentGeocodeClient;
+    }
+
+    private AddressResolverType resolveType() {
+        if (mockMode) {
+            return AddressResolverType.MOCK;
+        }
+        try {
+            return AddressResolverType.valueOf(addressResolverRaw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return AddressResolverType.HTTP_JSON;
+        }
+    }
+
     /**
      * 接口1：将客户地址解析为经纬度坐标
      */
     public AddressResult resolveAddress(String address) {
-        if (mockMode) {
-            return mockResolveAddress(address);
-        }
-        return callAddressApi(address);
+        return switch (resolveType()) {
+            case MOCK -> mockResolveAddress(address);
+            case TENCENT_LBS -> tencentGeocodeClient.geocode(address);
+            case HTTP_JSON -> callAddressApi(address);
+        };
     }
 
     /**

@@ -55,6 +55,8 @@ public class ScriptConfigService {
         if (existing != null) {
             existing.setContent(newContent);
         }
+
+
         return existing;
     }
 
