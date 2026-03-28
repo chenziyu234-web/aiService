@@ -1,5 +1,13 @@
+# 企业微信智能机器人回调（可选）：勿提交密钥，使用环境变量或本地 application-local.yml
+# WEWORK_AIBOT_TOKEN、WEWORK_AIBOT_AES_KEY、WEWORK_AIBOT_CORP_ID（corp-id 仅预留日志/扩展，加解密 receiveid 固定空串）
 server:
   port: 8080
+
+wework:
+  aibot:
+    token: ATY1YVYACNfcAM
+    aes-key: CPopuNiBbjt6JHLgBiydiW4G8fIGK7W1xEL4DHP5fsL
+    corp-id: wwbeab9ad5f592ce93
 
 ai:
   model:

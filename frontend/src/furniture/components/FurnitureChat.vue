@@ -11,7 +11,7 @@ const showQuickActions = ref(true)
 
 onMounted(() => {
   sessionId.value = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11)
-  addMessage('ai', '您好，我是家具物流专属智能客服，您可以直接发送收货地址，我帮您一键查询超区费哦~')
+  addMessage('ai', '嗨～我是您的家具物流小助手 😊 把收货地址发我（省市区+详细门牌就行），我帮您查超区费，特别快 📦')
 })
 
 function addMessage(sender, text) {
@@ -40,7 +40,7 @@ async function sendMessage(text) {
     })
     addMessage('ai', res.data.response)
   } catch {
-    addMessage('ai', '当前查询系统临时繁忙，您可以稍后再试，或直接联系人工客服咨询~')
+    addMessage('ai', '哎呀，系统这会儿有点忙 ⏳ 您稍等几分钟再试，或者先联系人工客服也行，别耽误您的事～')
   } finally {
     isLoading.value = false
     showQuickActions.value = true
@@ -51,7 +51,7 @@ async function sendMessage(text) {
 function handleQuickAction(action) {
   if (action === 'human') {
     addMessage('user', '联系人工客服')
-    addMessage('ai', '关于超区费以外的问题，您可以联系人工客服为您详细解答哦~')
+    addMessage('ai', '这块我帮您记不下啦～超区费以外的问题，建议直接找人工客服，他们会更专业地帮您 💬')
     return
   }
   sendMessage('我想查询超区费')
