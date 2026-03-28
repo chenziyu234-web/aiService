@@ -12,7 +12,7 @@ logistics:
 
 furniture:
   api:
-    mock: true
+    mock: false
   # 地址解析源：MOCK（默认） | TENCENT_LBS | HTTP_JSON
   # mock=true 时强制 MOCK；mock=false 时按此值选择
   address-resolver: TENCENT_LBS

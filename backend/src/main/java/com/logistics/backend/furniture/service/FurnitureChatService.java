@@ -56,7 +56,8 @@ public class FurnitureChatService {
         try {
             String aiOutput = callLLM(systemPrompt, history);
             history.add(Map.of("role", "assistant", "content", aiOutput));
-            return processCommand(aiOutput);
+            String processCommand = processCommand(aiOutput);
+            return processCommand;
         } catch (Exception e) {
             return scriptService.getContent("system_busy");
         }
@@ -93,7 +94,11 @@ public class FurnitureChatService {
         if (trimmed.contains("QUERY_SURCHARGE:")) {
             String address = extractAddress(trimmed);
             if (address != null && !address.isBlank()) {
-                return querySurchargeFlow(address);
+                try {
+                    return querySurchargeFlow(address);
+                } catch (IOException e) {
+                    return scriptService.getContent("system_busy");
+                }
             }
         }
         return trimmed;
@@ -111,7 +116,7 @@ public class FurnitureChatService {
     /**
      * 核心查询流程：地址 → 坐标(接口1) → 超区费(接口2) → 话术反馈
      */
-    private String querySurchargeFlow(String address) {
+    private String querySurchargeFlow(String address) throws IOException {
         AddressResult addrResult = addressService.resolveAddress(address);
         if (!addrResult.isSuccess()) {
             String script = scriptService.getContent("address_unclear");
@@ -135,7 +140,11 @@ public class FurnitureChatService {
 
     private String mockChat(String message) {
         if (message.matches(".*?(省|市|区|县).*?(路|街|号|小区|村|镇|大道).*")) {
-            return querySurchargeFlow(message);
+            try {
+                return querySurchargeFlow(message);
+            } catch (IOException e) {
+                return scriptService.getContent("system_busy");
+            }
         }
         if (message.contains("超区") || message.contains("查询") || message.contains("费用")) {
             return scriptService.getContent("guide_address");

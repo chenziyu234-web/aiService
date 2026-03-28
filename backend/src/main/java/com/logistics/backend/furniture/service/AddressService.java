@@ -26,7 +26,7 @@ public class AddressService {
     @Value("${furniture.surcharge-api.url:}")
     private String surchargeApiUrl;
 
-    @Value("${furniture.api.mock:true}")
+    @Value("${furniture.api.mock:false}")
     private boolean mockMode;
 
     @Value("${furniture.address-resolver:MOCK}")
@@ -69,11 +69,13 @@ public class AddressService {
     /**
      * 接口2：根据经纬度查询超区费
      */
-    public SurchargeResult querySurcharge(double longitude, double latitude) {
-        if (mockMode) {
+    public SurchargeResult querySurcharge(double longitude, double latitude) throws IOException {
+        /*if (mockMode) {
             return mockQuerySurcharge(longitude, latitude);
         }
-        return callSurchargeApi(longitude, latitude);
+        return callSurchargeApi(longitude, latitude);*/
+        // TODO接口2未出，暂时模拟
+        return mockQuerySurcharge(longitude, latitude);
     }
 
     // ========== Mock 实现（演示用，业务方接口就绪后切换 mock=false） ==========
@@ -151,32 +153,28 @@ public class AddressService {
         }
     }
 
-    private SurchargeResult callSurchargeApi(double longitude, double latitude) {
-        try {
-            String json = objectMapper.writeValueAsString(
-                    java.util.Map.of("longitude", longitude, "latitude", latitude));
-            Request request = new Request.Builder()
-                    .url(surchargeApiUrl)
-                    .post(RequestBody.create(json, MediaType.parse("application/json")))
-                    .build();
+    private SurchargeResult callSurchargeApi(double longitude, double latitude) throws IOException {
+        String json = objectMapper.writeValueAsString(
+                java.util.Map.of("longitude", longitude, "latitude", latitude));
+        Request request = new Request.Builder()
+                .url(surchargeApiUrl)
+                .post(RequestBody.create(json, MediaType.parse("application/json")))
+                .build();
 
-            try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful()) {
-                    return SurchargeResult.inRange();
-                }
-                JsonNode root = objectMapper.readTree(response.body().string());
-                boolean outOfRange = root.path("outOfRange").asBoolean(false);
-                if (outOfRange) {
-                    return SurchargeResult.surcharge(
-                            root.path("amount").asDouble(),
-                            root.path("ruleDescription").asText("")
-                    );
-                } else {
-                    return SurchargeResult.inRange();
-                }
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                return SurchargeResult.inRange();
             }
-        } catch (IOException e) {
-            return SurchargeResult.inRange();
+            JsonNode root = objectMapper.readTree(response.body().string());
+            boolean outOfRange = root.path("outOfRange").asBoolean(false);
+            if (outOfRange) {
+                return SurchargeResult.surcharge(
+                        root.path("amount").asDouble(),
+                        root.path("ruleDescription").asText("")
+                );
+            } else {
+                return SurchargeResult.inRange();
+            }
         }
     }
 }
