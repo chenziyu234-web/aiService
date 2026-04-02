@@ -3,7 +3,9 @@ package com.logistics.backend.furniture.controller;
 import com.logistics.backend.furniture.model.FurnitureChatRequest;
 import com.logistics.backend.furniture.service.FurnitureChatService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
 
@@ -19,5 +21,10 @@ public class FurnitureChatController {
     public Map<String, String> chat(@RequestBody FurnitureChatRequest request) {
         String response = chatService.chat(request.getSessionId(), request.getMessage());
         return Map.of("response", response);
+    }
+
+    @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter chatStream(@RequestBody FurnitureChatRequest request) {
+        return chatService.chatStream(request.getSessionId(), request.getMessage());
     }
 }

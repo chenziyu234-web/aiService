@@ -1,6 +1,5 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue'
-import axios from 'axios'
 
 const messages = ref([])
 const inputText = ref('')
@@ -22,6 +21,7 @@ function addMessage(sender, text) {
     time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
   })
   scrollToBottom()
+  return messages.value[messages.value.length - 1]
 }
 
 async function sendMessage(text) {
@@ -33,14 +33,69 @@ async function sendMessage(text) {
   isLoading.value = true
   showQuickActions.value = false
 
+  let aiMsg = null
+
+  function ensureAiMsg() {
+    if (!aiMsg) {
+      aiMsg = addMessage('ai', '')
+      isLoading.value = false
+    }
+    return aiMsg
+  }
+
   try {
-    const res = await axios.post('/api/furniture/chat/send', {
-      message: msg,
-      sessionId: sessionId.value
+    const response = await fetch('/api/furniture/chat/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, sessionId: sessionId.value })
     })
-    addMessage('ai', res.data.response)
+    if (!response.ok) throw new Error('request failed')
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let currentEvent = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const parts = buffer.split('\n')
+      buffer = parts.pop()
+
+      for (const line of parts) {
+        const trimmed = line.trim()
+        if (!trimmed) {
+          currentEvent = ''
+          continue
+        }
+        if (trimmed.startsWith('event:')) {
+          currentEvent = trimmed.slice(6).trim()
+          continue
+        }
+        if (trimmed.startsWith('data:')) {
+          const payload = trimmed.slice(5)
+          if (currentEvent === 'done') {
+            continue
+          }
+          const m = ensureAiMsg()
+          if (currentEvent === 'replace') {
+            m.text = payload
+          } else if (currentEvent === 'error') {
+            m.text = payload
+          } else {
+            m.text += payload
+          }
+          scrollToBottom()
+        }
+      }
+    }
+    if (!aiMsg || !aiMsg.text) {
+      ensureAiMsg().text = '哎呀，系统这会儿有点忙 ⏳ 您稍等几分钟再试～'
+    }
   } catch {
-    addMessage('ai', '哎呀，系统这会儿有点忙 ⏳ 您稍等几分钟再试，或者先联系人工客服也行，别耽误您的事～')
+    ensureAiMsg().text = '哎呀，系统这会儿有点忙 ⏳ 您稍等几分钟再试，或者先联系人工客服也行，别耽误您的事～'
   } finally {
     isLoading.value = false
     showQuickActions.value = true
