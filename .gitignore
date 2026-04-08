@@ -1,2 +1,3 @@
 **/application-local.yml
 **/*.env.local
+.superpowers/
